@@ -56,10 +56,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "GitHub.Cli pointer pack failed with exit code $LASTEXITCODE." }
           dotnet pack src/GitHub.Cli/GitHub.Cli.csproj -c $env:Configuration -r $rid $version -p:GeneratePackageOnBuild=false -bl:"pack-$rid.binlog"
           if ($LASTEXITCODE -ne 0) { throw "GitHub.Cli $rid pack failed with exit code $LASTEXITCODE." }
-          dotnet pack src/ghx/ghx.csproj -c $env:Configuration $version -p:GeneratePackageOnBuild=false -bl:pointer-pack-ghx.binlog
-          if ($LASTEXITCODE -ne 0) { throw "ghx pointer pack failed with exit code $LASTEXITCODE." }
-          dotnet pack src/ghx/ghx.csproj -c $env:Configuration -r $rid $version -p:GeneratePackageOnBuild=false -bl:"pack-ghx-$rid.binlog"
-          if ($LASTEXITCODE -ne 0) { throw "ghx $rid pack failed with exit code $LASTEXITCODE." }
+          dotnet pack src/gh/gh.csproj -c $env:Configuration $version -p:GeneratePackageOnBuild=false -bl:pointer-pack-gh.binlog
+          if ($LASTEXITCODE -ne 0) { throw "gh pointer pack failed with exit code $LASTEXITCODE." }
+          dotnet pack src/gh/gh.csproj -c $env:Configuration -r $rid $version -p:GeneratePackageOnBuild=false -bl:"pack-gh-$rid.binlog"
+          if ($LASTEXITCODE -ne 0) { throw "gh $rid pack failed with exit code $LASTEXITCODE." }
 
       - name: ✅ unix execute bits
         if: matrix.rid != 'win-x64'
@@ -67,10 +67,10 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $script = Join-Path $pwd 'src/GitHub.Cli/unix-exec.ps1'
           $cli = Get-ChildItem bin -Filter "GitHub.Cli.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
-          $ghx = Get-ChildItem bin -Filter "ghx.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
+          $tool = Get-ChildItem bin -Filter "gh.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
           if (-not $cli) { throw "GitHub.Cli.${{ matrix.rid }} nupkg not found" }
-          if (-not $ghx) { throw "ghx.${{ matrix.rid }} nupkg not found" }
-          foreach ($pkg in @($cli, $ghx)) {
+          if (-not $tool) { throw "gh.${{ matrix.rid }} nupkg not found" }
+          foreach ($pkg in @($cli, $tool)) {
             & pwsh -NoProfile -File $script -Nupkg $pkg.FullName -Assert
             if ($LASTEXITCODE -ne 0) { throw "unix execute bits missing in $($pkg.Name)" }
           }
@@ -83,7 +83,7 @@ jobs:
           # into one GitHub.Cli.{version}.nupkg corrupts the zip (NUGET 400 / sleet EOCD).
           path: |
             bin/GitHub.Cli.${{ matrix.rid }}.*.nupkg
-            bin/ghx.${{ matrix.rid }}.*.nupkg
+            bin/gh.${{ matrix.rid }}.*.nupkg
           retention-days: 30
           if-no-files-found: error
 
@@ -94,34 +94,34 @@ jobs:
           name: package-pointer
           path: |
             bin/GitHub.Cli.${{ env.Version }}.nupkg
-            bin/ghx.${{ env.Version }}.nupkg
+            bin/gh.${{ env.Version }}.nupkg
           retention-days: 30
           if-no-files-found: error
 
-      - name: 🧪 ghx --version
+      - name: 🧪 dotnet-gh --version
         run: |
           $ErrorActionPreference = 'Stop'
-          $nupkg = Get-ChildItem bin -Filter "ghx.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
-          if (-not $nupkg) { throw "ghx.${{ matrix.rid }} nupkg not found" }
-          $extract = Join-Path $env:RUNNER_TEMP "ghx-${{ matrix.rid }}"
+          $nupkg = Get-ChildItem bin -Filter "gh.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
+          if (-not $nupkg) { throw "gh.${{ matrix.rid }} nupkg not found" }
+          $extract = Join-Path $env:RUNNER_TEMP "gh-${{ matrix.rid }}"
           $script = Join-Path $pwd 'src/GitHub.Cli/unix-exec.ps1'
           & pwsh -NoProfile -File $script -Nupkg $nupkg.FullName -Destination $extract
           if ($LASTEXITCODE -ne 0) { throw "nupkg extract failed for $($nupkg.Name)" }
-          $ghx = Get-ChildItem $extract -Recurse -File | Where-Object { $_.Name -eq 'ghx' -or $_.Name -eq 'ghx.exe' } | Select-Object -First 1
-          if (-not $ghx) { throw "ghx executable not found in $($nupkg.Name)" }
+          $tool = Get-ChildItem $extract -Recurse -File | Where-Object { $_.Name -eq 'dotnet-gh' -or $_.Name -eq 'dotnet-gh.exe' } | Select-Object -First 1
+          if (-not $tool) { throw "dotnet-gh executable not found in $($nupkg.Name)" }
           if (-not $IsWindows) {
             $gh = Get-ChildItem $extract -Recurse -File | Where-Object { $_.FullName.Replace('\', '/') -like '*/gh/bin/gh' } | Select-Object -First 1
             if (-not $gh) { throw "gh/bin/gh not found in $($nupkg.Name)" }
             $exec = [System.IO.UnixFileMode]::UserExecute
-            if (([System.IO.File]::GetUnixFileMode($ghx.FullName) -band $exec) -eq 0) {
-              throw "ghx is not executable after extract: $($ghx.FullName)"
+            if (([System.IO.File]::GetUnixFileMode($tool.FullName) -band $exec) -eq 0) {
+              throw "dotnet-gh is not executable after extract: $($tool.FullName)"
             }
             if (([System.IO.File]::GetUnixFileMode($gh.FullName) -band $exec) -eq 0) {
               throw "gh/bin/gh is not executable after extract: $($gh.FullName)"
             }
           }
-          & $ghx.FullName --version
-          if ($LASTEXITCODE -ne 0) { throw "ghx --version failed with exit code $LASTEXITCODE." }
+          & $tool.FullName --version
+          if ($LASTEXITCODE -ne 0) { throw "dotnet-gh --version failed with exit code $LASTEXITCODE." }
 
       - name: 🐛 logs
         uses: actions/upload-artifact@v4
@@ -163,12 +163,12 @@ jobs:
             "GitHub.Cli.linux-arm64.$env:Version.nupkg",
             "GitHub.Cli.osx-x64.$env:Version.nupkg",
             "GitHub.Cli.osx-arm64.$env:Version.nupkg",
-            "ghx.$env:Version.nupkg",
-            "ghx.win-x64.$env:Version.nupkg",
-            "ghx.linux-x64.$env:Version.nupkg",
-            "ghx.linux-arm64.$env:Version.nupkg",
-            "ghx.osx-x64.$env:Version.nupkg",
-            "ghx.osx-arm64.$env:Version.nupkg"
+            "gh.$env:Version.nupkg",
+            "gh.win-x64.$env:Version.nupkg",
+            "gh.linux-x64.$env:Version.nupkg",
+            "gh.linux-arm64.$env:Version.nupkg",
+            "gh.osx-x64.$env:Version.nupkg",
+            "gh.osx-arm64.$env:Version.nupkg"
           )) {
             if ($names -notcontains $need) { throw "Missing $need" }
           }

@@ -2,19 +2,20 @@ using System.Diagnostics;
 
 namespace Tests;
 
-public class GhxTests
+public class NghTests
 {
     [Fact]
-    public void Lone_version_prints_ghx_and_gh()
+    public void Lone_version_prints_gh_wrapper_and_payload()
     {
-        var ghx = FindGhx();
-        if (ghx is null)
+        var tool = FindDotnetGh();
+        if (tool is null)
             return;
 
         var pin = File.ReadAllText(Path.Combine(FindRepoRoot(), "github-cli.version")).Trim();
-        var (exit, stdout, stderr) = Run(ghx, "--version");
+        var (exit, stdout, stderr) = Run(tool, "--version");
         Assert.True(exit == 0, stderr);
-        Assert.Contains("ghx ", stdout, StringComparison.Ordinal);
+        var first = stdout.Split(["\r\n", "\n"], StringSplitOptions.None)[0];
+        Assert.StartsWith("gh ", first, StringComparison.Ordinal);
         Assert.Contains("gh version", stdout, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(pin, stdout, StringComparison.Ordinal);
     }
@@ -22,25 +23,25 @@ public class GhxTests
     [Fact]
     public void Other_args_are_passthrough()
     {
-        var ghx = FindGhx();
-        if (ghx is null)
+        var tool = FindDotnetGh();
+        if (tool is null)
             return;
 
-        var (exit, stdout, stderr) = Run(ghx, "version");
+        var (exit, stdout, stderr) = Run(tool, "version");
         Assert.True(exit == 0, stderr);
-        Assert.DoesNotContain("ghx ", stdout, StringComparison.Ordinal);
+        Assert.StartsWith("gh version", stdout.Trim(), StringComparison.OrdinalIgnoreCase);
         var pin = File.ReadAllText(Path.Combine(FindRepoRoot(), "github-cli.version")).Trim();
         Assert.Contains(pin, stdout, StringComparison.Ordinal);
     }
 
-    static (int Exit, string Stdout, string Stderr) Run(string ghx, params string[] args)
+    static (int Exit, string Stdout, string Stderr) Run(string tool, params string[] args)
     {
-        var start = new ProcessStartInfo(ghx)
+        var start = new ProcessStartInfo(tool)
         {
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            WorkingDirectory = Path.GetDirectoryName(ghx),
+            WorkingDirectory = Path.GetDirectoryName(tool),
         };
         foreach (var arg in args)
         {
@@ -48,17 +49,17 @@ public class GhxTests
         }
 
         using var process = Process.Start(start)
-            ?? throw new InvalidOperationException("Failed to start ghx.");
+            ?? throw new InvalidOperationException("Failed to start dotnet-gh.");
         var stdout = process.StandardOutput.ReadToEnd();
         var stderr = process.StandardError.ReadToEnd();
         Assert.True(process.WaitForExit(60_000));
         return (process.ExitCode, stdout, stderr);
     }
 
-    static string? FindGhx()
+    static string? FindDotnetGh()
     {
         var dir = AppContext.BaseDirectory;
-        var name = OperatingSystem.IsWindows() ? "ghx.exe" : "ghx";
+        var name = OperatingSystem.IsWindows() ? "dotnet-gh.exe" : "dotnet-gh";
         var path = Path.Combine(dir, name);
         return File.Exists(path) ? path : null;
     }

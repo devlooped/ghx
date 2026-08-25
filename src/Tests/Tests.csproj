@@ -14,6 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GitHub.Cli\GitHub.Cli.csproj" />
-    <ProjectReference Include="..\ghx\ghx.csproj" />
+    <ProjectReference Include="..\gh\gh.csproj" />
   </ItemGroup>
 </Project>

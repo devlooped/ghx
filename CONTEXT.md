@@ -1,6 +1,6 @@
 # GitHub.Cli
 
-NuGet pointer and per-RID payloads that put a working GitHub CLI next to a .NET app or tool. Humans run that payload through **ghx**.
+NuGet pointer and per-RID payloads that put a working GitHub CLI next to a .NET app or tool. Humans run that payload through the **gh** tool package.
 
 ## Language
 
@@ -20,12 +20,12 @@ _Avoid_: native files, native/, binaries, sidecar
 The managed type in namespace `GitHub` whose `ResolvePath` returns the Payload's `gh` executable (`gh.exe` on Windows). Callers write `GitHub.Cli.ResolvePath()`.
 _Avoid_: Gh, Ghx, GitHubCli, ResolveBinaryPath
 
-**ghx**:
-The passthrough .NET tool that execs the Payload `gh` with the same arguments. Primary human vehicle via `dnx`/`ndnx ghx`.
-_Avoid_: GitHub CLI, gh, wrapper with its own GitHub verbs
+**gh** (tool package):
+The passthrough .NET tool. Package id `gh` so `dnx`/`ndnx gh`. `ToolCommandName` is `dotnet-gh`, so a locally/globally installed tool is `dotnet gh` and does not steal the `gh` command from GitHub's native CLI.
+_Avoid_: installing a command named `gh`; wrapping with its own GitHub verbs
 
 **Execute**:
-ghx replacing itself with the Payload `gh`. Every argument is forwarded. The only exception is a lone `--version`, which prints ghx and `gh`.
+The tool replacing itself with the Payload `gh`. Every argument is forwarded. The only exception is a lone `--version`, which prints the wrapper version line (`gh {version}`) then payload `gh --version`.
 _Avoid_: wrap, shell out and wait as the product metaphor (implementation may still spawn)
 
 **Upstream**:
