@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/GitHub.Cli/GitHub.Cli.csproj" />
+  <Project Path="src/ghx/ghx.csproj" />
+  <Project Path="src/Tests/Tests.csproj" />
+</Solution>

@@ -1,0 +1,38 @@
+<Project>
+  <!--
+    Direct PackageReference and P2P import. Copies the Payload tree to output as gh/
+    with paths intact (do not use runtimes/{rid}/native/ — the SDK flattens that).
+  -->
+  <PropertyGroup>
+    <GitHubCliTargetsImported>true</GitHubCliTargetsImported>
+    <_GitHubCliRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</_GitHubCliRid>
+    <_GitHubCliRid Condition="'$(_GitHubCliRid)' == ''">$(NETCoreSdkPortableRuntimeIdentifier)</_GitHubCliRid>
+    <_GitHubCliRid Condition="'$(_GitHubCliRid)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">win-x64</_GitHubCliRid>
+    <_GitHubCliRid Condition="'$(_GitHubCliRid)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">linux-x64</_GitHubCliRid>
+    <_GitHubCliRid Condition="'$(_GitHubCliRid)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">osx-arm64</_GitHubCliRid>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GitHubCliPayloadRoot)' == ''">
+    <_GitHubCliVersion>$([System.IO.Path]::GetFileName($([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))))</_GitHubCliVersion>
+    <_GitHubCliPackageFolder>$([System.String]::Copy('github.cli.$(_GitHubCliRid)').ToLowerInvariant())</_GitHubCliPackageFolder>
+    <GitHubCliPayloadRoot>$(NuGetPackageRoot)$(_GitHubCliPackageFolder)\$(_GitHubCliVersion)\gh</GitHubCliPayloadRoot>
+  </PropertyGroup>
+
+  <Target Name="IncludeGitHubCliPayload"
+          BeforeTargets="GetCopyToOutputDirectoryItems;AssignTargetPaths"
+          Condition="'$(GitHubCliPayloadRoot)' != ''">
+    <Error
+      Condition="'$(RuntimeIdentifier)' != '' and !Exists('$(GitHubCliPayloadRoot)')"
+      Text="GitHub.Cli payload not found at '$(GitHubCliPayloadRoot)'. Pack GitHub.Cli -r $(RuntimeIdentifier) first and restore from $(PackageOutputPath)." />
+    <ItemGroup Condition="Exists('$(GitHubCliPayloadRoot)')">
+      <_GitHubCliPayloadFiles Include="$(GitHubCliPayloadRoot)\**\*" />
+      <ContentWithTargetPath Include="@(_GitHubCliPayloadFiles)">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <TargetPath>gh\%(_GitHubCliPayloadFiles.RecursiveDir)%(_GitHubCliPayloadFiles.Filename)%(_GitHubCliPayloadFiles.Extension)</TargetPath>
+        <Visible>false</Visible>
+        <Pack>false</Pack>
+      </ContentWithTargetPath>
+    </ItemGroup>
+  </Target>
+</Project>

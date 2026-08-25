@@ -1,0 +1,3 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)..\buildTransitive\GitHub.Cli.targets" Condition="'$(GitHubCliTargetsImported)' != 'true'" />
+</Project>

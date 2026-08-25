@@ -1,0 +1,55 @@
+# Creates a draft GitHub release when github-cli.version changes.
+# vars.RELEASE=PRERELEASE (default) → tag/title {version}-preview, draft --prerelease.
+# vars.RELEASE=STABLE → tag/title {version}, draft (not a prerelease). Never edits an existing preview.
+# Org webhook publishes drafts.
+name: release
+on:
+  push:
+    branches: [main]
+    paths:
+      - github-cli.version
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 🤘 checkout
+        uses: actions/checkout@v4
+
+      - name: 🚀 draft
+        env:
+          CHANNEL: ${{ vars.RELEASE }}
+        run: |
+          set -euo pipefail
+          VERSION=$(tr -d '[:space:]' < github-cli.version)
+          CHANNEL="${CHANNEL:-PRERELEASE}"
+          if [ "$CHANNEL" = STABLE ]; then
+            TAG="$VERSION"
+          else
+            TAG="$VERSION-preview"
+          fi
+          BODY=$(gh release view "v$VERSION" --repo cli/cli --json body --jq '.body // ""')
+          {
+            printf '%s\n' "$BODY"
+            echo ""
+            echo "https://github.com/cli/cli/releases/tag/v$VERSION"
+            echo "<!-- X -->"
+          } > release-notes.md
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists"
+          elif [ "$CHANNEL" = STABLE ]; then
+            gh release create "$TAG" --draft --title "$TAG" --notes-file release-notes.md
+          else
+            gh release create "$TAG" --draft --prerelease --title "$TAG" --notes-file release-notes.md
+          fi

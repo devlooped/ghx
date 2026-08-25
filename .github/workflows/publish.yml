@@ -1,0 +1,202 @@
+# Full RID matrix on GitHub release. nuget.org version is the tag; append -preview only if the tag is a naked prerelease.
+
+name: publish
+on:
+  release:
+    types: [prereleased, released]
+
+env:
+  DOTNET_NOLOGO: true
+  Configuration: Release
+  GeneratePackageOnBuild: false
+  Version: ${{ contains(github.event.release.tag_name, '-preview') && github.event.release.tag_name || (github.event.release.prerelease && format('{0}-preview', github.event.release.tag_name) || github.event.release.tag_name) }}
+  VersionLabel: refs/tags/${{ github.event.release.tag_name }}
+  GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+  MSBUILDTERMINALLOGGER: auto
+  SLEET_FEED_URL: https://api.nuget.org/v3/index.json
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  payload:
+    name: payload-${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: ubuntu-24.04-arm
+            rid: linux-arm64
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-15-intel
+            rid: osx-x64
+          - os: macos-latest
+            rid: osx-arm64
+    steps:
+      - name: 🤘 checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ⚙ dotnet
+        uses: devlooped/actions-dotnet-env@v1
+
+      - name: 📦 pack
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $rid = '${{ matrix.rid }}'
+          $version = "-p:Version=$env:Version"
+          # Pointer packs restore the host RID Payload; RID packs reuse that tree.
+          dotnet pack src/GitHub.Cli/GitHub.Cli.csproj -c $env:Configuration $version -p:GeneratePackageOnBuild=false -bl:pointer-pack.binlog
+          if ($LASTEXITCODE -ne 0) { throw "GitHub.Cli pointer pack failed with exit code $LASTEXITCODE." }
+          dotnet pack src/GitHub.Cli/GitHub.Cli.csproj -c $env:Configuration -r $rid $version -p:GeneratePackageOnBuild=false -bl:"pack-$rid.binlog"
+          if ($LASTEXITCODE -ne 0) { throw "GitHub.Cli $rid pack failed with exit code $LASTEXITCODE." }
+          dotnet pack src/ghx/ghx.csproj -c $env:Configuration $version -p:GeneratePackageOnBuild=false -bl:pointer-pack-ghx.binlog
+          if ($LASTEXITCODE -ne 0) { throw "ghx pointer pack failed with exit code $LASTEXITCODE." }
+          dotnet pack src/ghx/ghx.csproj -c $env:Configuration -r $rid $version -p:GeneratePackageOnBuild=false -bl:"pack-ghx-$rid.binlog"
+          if ($LASTEXITCODE -ne 0) { throw "ghx $rid pack failed with exit code $LASTEXITCODE." }
+
+      - name: ✅ unix execute bits
+        if: matrix.rid != 'win-x64'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = Join-Path $pwd 'src/GitHub.Cli/unix-exec.ps1'
+          $cli = Get-ChildItem bin -Filter "GitHub.Cli.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
+          $ghx = Get-ChildItem bin -Filter "ghx.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
+          if (-not $cli) { throw "GitHub.Cli.${{ matrix.rid }} nupkg not found" }
+          if (-not $ghx) { throw "ghx.${{ matrix.rid }} nupkg not found" }
+          foreach ($pkg in @($cli, $ghx)) {
+            & pwsh -NoProfile -File $script -Nupkg $pkg.FullName -Assert
+            if ($LASTEXITCODE -ne 0) { throw "unix execute bits missing in $($pkg.Name)" }
+          }
+
+      - name: 📤 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.rid }}
+          # Only RID nupkgs. Pointer nupkgs are produced on every OS; merging them
+          # into one GitHub.Cli.{version}.nupkg corrupts the zip (NUGET 400 / sleet EOCD).
+          path: |
+            bin/GitHub.Cli.${{ matrix.rid }}.*.nupkg
+            bin/ghx.${{ matrix.rid }}.*.nupkg
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: 📤 pointer
+        if: matrix.rid == 'linux-x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-pointer
+          path: |
+            bin/GitHub.Cli.${{ env.Version }}.nupkg
+            bin/ghx.${{ env.Version }}.nupkg
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: 🧪 ghx --version
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $nupkg = Get-ChildItem bin -Filter "ghx.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
+          if (-not $nupkg) { throw "ghx.${{ matrix.rid }} nupkg not found" }
+          $extract = Join-Path $env:RUNNER_TEMP "ghx-${{ matrix.rid }}"
+          $script = Join-Path $pwd 'src/GitHub.Cli/unix-exec.ps1'
+          & pwsh -NoProfile -File $script -Nupkg $nupkg.FullName -Destination $extract
+          if ($LASTEXITCODE -ne 0) { throw "nupkg extract failed for $($nupkg.Name)" }
+          $ghx = Get-ChildItem $extract -Recurse -File | Where-Object { $_.Name -eq 'ghx' -or $_.Name -eq 'ghx.exe' } | Select-Object -First 1
+          if (-not $ghx) { throw "ghx executable not found in $($nupkg.Name)" }
+          if (-not $IsWindows) {
+            $gh = Get-ChildItem $extract -Recurse -File | Where-Object { $_.FullName.Replace('\', '/') -like '*/gh/bin/gh' } | Select-Object -First 1
+            if (-not $gh) { throw "gh/bin/gh not found in $($nupkg.Name)" }
+            $exec = [System.IO.UnixFileMode]::UserExecute
+            if (([System.IO.File]::GetUnixFileMode($ghx.FullName) -band $exec) -eq 0) {
+              throw "ghx is not executable after extract: $($ghx.FullName)"
+            }
+            if (([System.IO.File]::GetUnixFileMode($gh.FullName) -band $exec) -eq 0) {
+              throw "gh/bin/gh is not executable after extract: $($gh.FullName)"
+            }
+          }
+          & $ghx.FullName --version
+          if ($LASTEXITCODE -ne 0) { throw "ghx --version failed with exit code $LASTEXITCODE." }
+
+      - name: 🐛 logs
+        uses: actions/upload-artifact@v4
+        if: runner.debug && always()
+        with:
+          name: logs-${{ matrix.rid }}
+          path: '*.binlog'
+
+  publish:
+    needs: [payload]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🤘 checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙ dotnet
+        uses: devlooped/actions-dotnet-env@v1
+
+      - name: 📥 packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          path: bin
+          merge-multiple: true
+
+      - name: ✅ validate
+        working-directory: bin
+        run: |
+          $invalid = Get-ChildItem -File -Filter "*.42.42*.nupkg"
+          if ($invalid) {
+            Write-Error "Found dev/local packages with disallowed 42.42* version prefix:`n$($invalid.Name -join "`n")"
+            exit 1
+          }
+          $names = Get-ChildItem -File -Filter *.nupkg | ForEach-Object Name
+          foreach ($need in @(
+            "GitHub.Cli.$env:Version.nupkg",
+            "GitHub.Cli.win-x64.$env:Version.nupkg",
+            "GitHub.Cli.linux-x64.$env:Version.nupkg",
+            "GitHub.Cli.linux-arm64.$env:Version.nupkg",
+            "GitHub.Cli.osx-x64.$env:Version.nupkg",
+            "GitHub.Cli.osx-arm64.$env:Version.nupkg",
+            "ghx.$env:Version.nupkg",
+            "ghx.win-x64.$env:Version.nupkg",
+            "ghx.linux-x64.$env:Version.nupkg",
+            "ghx.linux-arm64.$env:Version.nupkg",
+            "ghx.osx-x64.$env:Version.nupkg",
+            "ghx.osx-arm64.$env:Version.nupkg"
+          )) {
+            if ($names -notcontains $need) { throw "Missing $need" }
+          }
+
+      - name: 🚀 nuget
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        if: env.NUGET_API_KEY != ''
+        working-directory: bin
+        run: |
+          $packages = @(Get-ChildItem -Filter *.nupkg | Where-Object Name -NotLike '*.symbols.nupkg' | Sort-Object Name)
+          $runtimePackagePattern = '\.(win-x64|linux-x64|linux-arm64|osx-x64|osx-arm64)\.'
+          $runtimePackages = @($packages | Where-Object Name -Match $runtimePackagePattern)
+          $pointerPackages = @($packages | Where-Object Name -NotMatch $runtimePackagePattern)
+          if ($runtimePackages.Count -eq 0) { throw 'No RID-specific packages found.' }
+          if ($pointerPackages.Count -eq 0) { throw 'No pointer packages found.' }
+          foreach ($package in $runtimePackages) {
+            dotnet nuget push $package.FullName -s https://api.nuget.org/v3/index.json -k $env:NUGET_API_KEY --skip-duplicate
+          }
+          foreach ($package in $pointerPackages) {
+            dotnet nuget push $package.FullName -s https://api.nuget.org/v3/index.json -k $env:NUGET_API_KEY --skip-duplicate
+          }
+
+      - name: 🚀 sleet
+        env:
+          SLEET_CONNECTION: ${{ secrets.SLEET_CONNECTION }}
+        if: env.SLEET_CONNECTION != ''
+        shell: bash
+        run: |
+          dotnet tool update sleet -g --allow-downgrade --version $(curl -s --compressed ${{ vars.SLEET_FEED_URL }} | jq '.["sleet:version"]' -r)
+          sleet push bin --config none -f --verbose -p "SLEET_FEED_CONTAINER=nuget" -p "SLEET_FEED_CONNECTIONSTRING=${{ secrets.SLEET_CONNECTION }}" -p "SLEET_FEED_TYPE=azure"
