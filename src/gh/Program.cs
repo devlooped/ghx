@@ -11,7 +11,7 @@ static class Program
             var version = typeof(Program).Assembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "0.0.0";
-            Console.WriteLine("ghx " + version);
+            Console.WriteLine("gh " + version);
         }
 
         var start = new ProcessStartInfo

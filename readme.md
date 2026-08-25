@@ -1,7 +1,7 @@
 # ghx
 
-[![Version](https://img.shields.io/nuget/vpre/ghx.svg?color=royalblue)](https://www.nuget.org/packages/ghx)
-[![Downloads](https://img.shields.io/nuget/dt/ghx.svg?color=darkmagenta)](https://www.nuget.org/packages/ghx)
+[![Version](https://img.shields.io/nuget/vpre/gh.svg?color=royalblue)](https://www.nuget.org/packages/gh)
+[![Downloads](https://img.shields.io/nuget/dt/gh.svg?color=darkmagenta)](https://www.nuget.org/packages/gh)
 [![EULA](https://img.shields.io/badge/EULA-OSMF-blue?labelColor=black&color=C9FF30)](https://github.com/devlooped/oss/blob/main/osmfeula.txt)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/devlooped/oss/blob/main/license.txt)
 
@@ -21,10 +21,12 @@ OSMF tier. A single fee covers all of [Devlooped packages](https://www.nuget.org
 ## Usage
 
 ```bash
-ndnx ghx -- repo list
-dnx  ghx -- repo list
-ghx --version   # ghx version, then gh --version
+ndnx gh -- repo list
+dnx  gh -- repo list
+dotnet tool install gh && dotnet gh --version
 ```
+
+`dnx`/`ndnx` use the package id `gh`. An installed tool is `dotnet gh` (`ToolCommandName` `dotnet-gh`) so it does not replace GitHub's native `gh` on PATH.
 
 `PackageReference` `GitHub.Cli` and pack/publish for your RID to copy `gh/` next to the app. `GitHub.Cli.ResolvePath()` is the Payload `gh` executable.
 

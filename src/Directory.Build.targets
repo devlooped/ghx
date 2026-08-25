@@ -224,7 +224,7 @@
 
   <!--
     dotnet pack writes 0644 for every regular file. Unix RID nupkgs must carry
-    +x on gh and the ghx host or restore/unzip cannot exec them.
+    +x on gh and the dotnet-gh host or restore/unzip cannot exec them.
   -->
   <Target Name="StampUnixExecuteBitsOnNupkg"
           AfterTargets="Pack"

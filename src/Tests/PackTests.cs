@@ -20,7 +20,7 @@ public class PackTests
         var repo = FindRepoRoot();
         var slnx = File.ReadAllText(Path.Combine(repo, "ghx.slnx"));
         Assert.Contains("src/GitHub.Cli/GitHub.Cli.csproj", slnx);
-        Assert.Contains("src/ghx/ghx.csproj", slnx);
+        Assert.Contains("src/gh/gh.csproj", slnx);
 
         var githubCli = File.ReadAllText(Path.Combine(repo, "src", "GitHub.Cli", "GitHub.Cli.csproj"));
         Assert.Contains("<PackageId>GitHub.Cli</PackageId>", githubCli);
@@ -51,7 +51,7 @@ public class PackTests
         Assert.Contains("Assert-NupkgUnixExecuteBits", unixExec);
         Assert.Contains("Expand-NupkgWithUnixModes", unixExec);
         Assert.Contains("gh/bin/gh", unixExec);
-        Assert.Contains("ghx", unixExec);
+        Assert.Contains("dotnet-gh", unixExec);
 
         var directoryTargets = File.ReadAllText(Path.Combine(repo, "src", "Directory.Build.targets"));
         Assert.Contains("StampUnixExecuteBitsOnNupkg", directoryTargets);
@@ -72,27 +72,29 @@ public class PackTests
         Assert.Contains(@"TargetPath>gh\", consumer.Replace('/', '\\'));
         Assert.DoesNotContain("runtimes/$(RuntimeIdentifier)/native/", consumer);
 
-        var ghx = File.ReadAllText(Path.Combine(repo, "src", "ghx", "ghx.csproj"));
-        Assert.Contains("<PackageId>ghx</PackageId>", ghx);
-        Assert.Contains("<PackAsTool>true</PackAsTool>", ghx);
-        Assert.Contains("<PublishAot>true</PublishAot>", ghx);
-        Assert.Contains("<ToolCommandName>ghx</ToolCommandName>", ghx);
-        Assert.Contains("<ToolPackageRuntimeIdentifiers>win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</ToolPackageRuntimeIdentifiers>", ghx);
-        Assert.Contains("""<PackageReference Include="GitHub.Cli" Version="$(Version)" />""", ghx);
-        Assert.DoesNotContain("NuGetizer", ghx, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Readme", ghx);
-        var nuget = File.ReadAllText(Path.Combine(repo, "src", "ghx", "nuget.config"));
+        var tool = File.ReadAllText(Path.Combine(repo, "src", "gh", "gh.csproj"));
+        Assert.Contains("<PackageId>gh</PackageId>", tool);
+        Assert.Contains("<PackAsTool>true</PackAsTool>", tool);
+        Assert.Contains("<PublishAot>true</PublishAot>", tool);
+        Assert.Contains("<ToolCommandName>dotnet-gh</ToolCommandName>", tool);
+        Assert.Contains("<AssemblyName>dotnet-gh</AssemblyName>", tool);
+        Assert.Contains("<ToolPackageRuntimeIdentifiers>win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</ToolPackageRuntimeIdentifiers>", tool);
+        Assert.Contains("""<PackageReference Include="GitHub.Cli" Version="$(Version)" />""", tool);
+        Assert.DoesNotContain("NuGetizer", tool, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Readme", tool);
+        var nuget = File.ReadAllText(Path.Combine(repo, "src", "gh", "nuget.config"));
         Assert.Contains("key=\"local\"", nuget);
         Assert.Contains("../../bin", nuget);
         Assert.Contains("GitHub.Cli", nuget);
-        Assert.DoesNotContain("win-arm64", ghx);
-        Assert.DoesNotContain("ghx.$(RuntimeIdentifier)", ghx);
+        Assert.Contains("package pattern=\"gh\"", nuget);
+        Assert.DoesNotContain("win-arm64", tool);
+        Assert.DoesNotContain("gh.$(RuntimeIdentifier)", tool);
 
         Assert.False(File.Exists(Path.Combine(repo, "src", "GitHub.Cli", "runtime.json")));
         foreach (var rid in SupportedRids)
         {
             Assert.Contains(rid, githubCli);
-            Assert.Contains(rid, ghx);
+            Assert.Contains(rid, tool);
         }
     }
 
@@ -185,12 +187,12 @@ public class PackTests
                 AssertUnixExecuteBits(ridPkg);
         }
 
-        foreach (var ghxRid in Directory.GetFiles(bin, "ghx.*.nupkg")
+        foreach (var toolRid in Directory.GetFiles(bin, "gh.*.nupkg")
             .Where(f => !f.Contains(".symbols.", StringComparison.OrdinalIgnoreCase)
                 && SupportedRids.Any(r => Path.GetFileName(f).Contains("." + r + ".", StringComparison.Ordinal)
                     && !Path.GetFileName(f).Contains(".win-", StringComparison.Ordinal))))
         {
-            AssertUnixExecuteBits(ghxRid);
+            AssertUnixExecuteBits(toolRid);
         }
     }
 
@@ -203,11 +205,11 @@ public class PackTests
         Directory.CreateDirectory(scratch);
         try
         {
-            var nupkg = Path.Combine(scratch, "ghx.linux-x64.1.0.0.nupkg");
+            var nupkg = Path.Combine(scratch, "gh.linux-x64.1.0.0.nupkg");
             using (var archive = ZipFile.Open(nupkg, ZipArchiveMode.Create))
             {
                 archive.CreateEntry("tools/any/linux-x64/gh/bin/gh");
-                archive.CreateEntry("tools/any/linux-x64/ghx");
+                archive.CreateEntry("tools/any/linux-x64/dotnet-gh");
                 archive.CreateEntry("tools/any/linux-x64/gh/readme.txt");
             }
 
@@ -227,7 +229,7 @@ public class PackTests
             using (var zip = ZipFile.OpenRead(nupkg))
             {
                 Assert.True(HasUnixExecute(zip.GetEntry("tools/any/linux-x64/gh/bin/gh")!.ExternalAttributes));
-                Assert.True(HasUnixExecute(zip.GetEntry("tools/any/linux-x64/ghx")!.ExternalAttributes));
+                Assert.True(HasUnixExecute(zip.GetEntry("tools/any/linux-x64/dotnet-gh")!.ExternalAttributes));
                 Assert.False(HasUnixExecute(zip.GetEntry("tools/any/linux-x64/gh/readme.txt")!.ExternalAttributes));
             }
 
@@ -239,7 +241,7 @@ public class PackTests
                 Expand-NupkgWithUnixModes '{nupkg.Replace("'", "''", StringComparison.Ordinal)}' '{dest.Replace("'", "''", StringComparison.Ordinal)}'
                 """);
             var extractedGh = Path.Combine(dest, "tools", "any", "linux-x64", "gh", "bin", "gh");
-            var extractedHost = Path.Combine(dest, "tools", "any", "linux-x64", "ghx");
+            var extractedHost = Path.Combine(dest, "tools", "any", "linux-x64", "dotnet-gh");
             Assert.True(File.Exists(extractedGh), extractedGh);
             Assert.True(File.Exists(extractedHost), extractedHost);
             if (!OperatingSystem.IsWindows())

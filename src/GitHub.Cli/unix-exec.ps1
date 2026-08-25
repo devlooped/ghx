@@ -21,7 +21,7 @@ function Test-UnixExecuteEntry([string] $Name) {
     }
     $slash = $n.LastIndexOf('/')
     $leaf = if ($slash -lt 0) { $n } else { $n.Substring($slash + 1) }
-    if ($leaf -eq 'ghx') {
+    if ($leaf -eq 'dotnet-gh') {
         return $true
     }
     if ($n -eq 'gh/bin/gh' -or $n.EndsWith('/gh/bin/gh')) {
