@@ -17,6 +17,21 @@ public class ReleaseTests
     }
 
     [Fact]
+    public void Release_notes_skip_sponsorlink_announcement_and_sponsors()
+    {
+        var release = File.ReadAllText(Path.Combine(FindRepoRoot(), ".github", "workflows", "release.yml"));
+        // SponsorLink posts published releases to X unless the body contains skip-announce,
+        // and injects a sponsors section unless it contains nosponsors.
+        // GHX notes are copied from cli/cli; they are not our work. <!-- X --> *forces* a post.
+        Assert.Contains("echo '<!-- !x -->'", release);
+        Assert.Contains("echo '<!-- nosponsors -->'", release);
+        Assert.DoesNotContain("echo \"<!-- X -->\"", release);
+        Assert.DoesNotContain("echo \"<!-- x -->\"", release);
+        Assert.DoesNotContain("echo '<!-- X -->'", release);
+        Assert.DoesNotContain("echo '<!-- x -->'", release);
+    }
+
+    [Fact]
     public void Publish_version_does_not_double_append_preview()
     {
         var publish = File.ReadAllText(Path.Combine(FindRepoRoot(), ".github", "workflows", "publish.yml"));
