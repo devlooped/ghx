@@ -35,3 +35,10 @@ _Avoid_: submodule, clone, building `gh` from source
 **Preview**:
 A separate GitHub release tagged `{upstream}-preview` when `vars.RELEASE` is not `STABLE`. Nupkgs use that tag. A later STABLE release is `{upstream}`, not an edit of the preview.
 _Avoid_: flipping the prerelease bit on a published release, `{version}-preview-preview`
+
+**Skip-announce**:
+`<!-- !x -->` in every GitHub release body. Notes are copied from cli/cli; SponsorLink must not post them to X.
+_Avoid_: `<!-- X -->` (that *forces* an announcement)
+
+**Nosponsors**:
+`<!-- nosponsors -->` in every GitHub release body so SponsorLink does not inject a sponsors section.
