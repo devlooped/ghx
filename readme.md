@@ -1,4 +1,5 @@
-# ghx
+![Icon](assets/icon.png) ghx
+============
 
 [![Version](https://img.shields.io/nuget/vpre/gh.svg?color=royalblue)](https://www.nuget.org/packages/gh)
 [![Downloads](https://img.shields.io/nuget/dt/gh.svg?color=darkmagenta)](https://www.nuget.org/packages/gh)
@@ -21,8 +22,10 @@ OSMF tier. A single fee covers all of [Devlooped packages](https://www.nuget.org
 ## Usage
 
 ```bash
-ndnx gh -- repo list
-dnx  gh -- repo list
+ndnx gh repo list
+dnx  gh repo list
+
+# installed
 dotnet tool install gh && dotnet gh --version
 ```
 
