@@ -33,7 +33,7 @@
   <Import Project="buildTransitive\GitHub.Cli.targets" Condition="'$(GitHubCliTargetsImported)' != 'true'" />
 
   <ItemGroup>
-    <None Include="buildTransitive\GitHub.Cli.targets" Pack="$(IncludeBuildOutput)" PackagePath="buildTransitive\GitHub.Cli.targets" />
-    <None Include="build\GitHub.Cli.targets" Pack="$(IncludeBuildOutput)" PackagePath="build\GitHub.Cli.targets" />
+    <None Include="buildTransitive\GitHub.Cli.targets" Pack="$(IncludeBuildOutput)" PackagePath="buildTransitive\gh.cli.targets" />
+    <None Include="build\GitHub.Cli.targets" Pack="$(IncludeBuildOutput)" PackagePath="build\gh.cli.targets" />
   </ItemGroup>
 </Project>
