@@ -53,9 +53,9 @@ jobs:
           $version = "-p:Version=$env:Version"
           # Pointer packs restore the host RID Payload; RID packs reuse that tree.
           dotnet pack src/GitHub.Cli/GitHub.Cli.csproj -c $env:Configuration $version -p:GeneratePackageOnBuild=false -bl:pointer-pack.binlog
-          if ($LASTEXITCODE -ne 0) { throw "GitHub.Cli pointer pack failed with exit code $LASTEXITCODE." }
+          if ($LASTEXITCODE -ne 0) { throw "gh.cli pointer pack failed with exit code $LASTEXITCODE." }
           dotnet pack src/GitHub.Cli/GitHub.Cli.csproj -c $env:Configuration -r $rid $version -p:GeneratePackageOnBuild=false -bl:"pack-$rid.binlog"
-          if ($LASTEXITCODE -ne 0) { throw "GitHub.Cli $rid pack failed with exit code $LASTEXITCODE." }
+          if ($LASTEXITCODE -ne 0) { throw "gh.cli $rid pack failed with exit code $LASTEXITCODE." }
           dotnet pack src/gh/gh.csproj -c $env:Configuration $version -p:GeneratePackageOnBuild=false -bl:pointer-pack-gh.binlog
           if ($LASTEXITCODE -ne 0) { throw "gh pointer pack failed with exit code $LASTEXITCODE." }
           dotnet pack src/gh/gh.csproj -c $env:Configuration -r $rid $version -p:GeneratePackageOnBuild=false -bl:"pack-gh-$rid.binlog"
@@ -66,9 +66,9 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $script = Join-Path $pwd 'src/GitHub.Cli/unix-exec.ps1'
-          $cli = Get-ChildItem bin -Filter "GitHub.Cli.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
+          $cli = Get-ChildItem bin -Filter "gh.cli.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
           $tool = Get-ChildItem bin -Filter "gh.${{ matrix.rid }}.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
-          if (-not $cli) { throw "GitHub.Cli.${{ matrix.rid }} nupkg not found" }
+          if (-not $cli) { throw "gh.cli.${{ matrix.rid }} nupkg not found" }
           if (-not $tool) { throw "gh.${{ matrix.rid }} nupkg not found" }
           foreach ($pkg in @($cli, $tool)) {
             & pwsh -NoProfile -File $script -Nupkg $pkg.FullName -Assert
@@ -80,9 +80,9 @@ jobs:
         with:
           name: package-${{ matrix.rid }}
           # Only RID nupkgs. Pointer nupkgs are produced on every OS; merging them
-          # into one GitHub.Cli.{version}.nupkg corrupts the zip (NUGET 400 / sleet EOCD).
+          # into one gh.cli.{version}.nupkg corrupts the zip (NUGET 400 / sleet EOCD).
           path: |
-            bin/GitHub.Cli.${{ matrix.rid }}.*.nupkg
+            bin/gh.cli.${{ matrix.rid }}.*.nupkg
             bin/gh.${{ matrix.rid }}.*.nupkg
           retention-days: 30
           if-no-files-found: error
@@ -93,7 +93,7 @@ jobs:
         with:
           name: package-pointer
           path: |
-            bin/GitHub.Cli.${{ env.Version }}.nupkg
+            bin/gh.cli.${{ env.Version }}.nupkg
             bin/gh.${{ env.Version }}.nupkg
           retention-days: 30
           if-no-files-found: error
@@ -157,12 +157,12 @@ jobs:
           }
           $names = Get-ChildItem -File -Filter *.nupkg | ForEach-Object Name
           foreach ($need in @(
-            "GitHub.Cli.$env:Version.nupkg",
-            "GitHub.Cli.win-x64.$env:Version.nupkg",
-            "GitHub.Cli.linux-x64.$env:Version.nupkg",
-            "GitHub.Cli.linux-arm64.$env:Version.nupkg",
-            "GitHub.Cli.osx-x64.$env:Version.nupkg",
-            "GitHub.Cli.osx-arm64.$env:Version.nupkg",
+            "gh.cli.$env:Version.nupkg",
+            "gh.cli.win-x64.$env:Version.nupkg",
+            "gh.cli.linux-x64.$env:Version.nupkg",
+            "gh.cli.linux-arm64.$env:Version.nupkg",
+            "gh.cli.osx-x64.$env:Version.nupkg",
+            "gh.cli.osx-arm64.$env:Version.nupkg",
             "gh.$env:Version.nupkg",
             "gh.win-x64.$env:Version.nupkg",
             "gh.linux-x64.$env:Version.nupkg",

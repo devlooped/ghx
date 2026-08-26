@@ -5,11 +5,11 @@ NuGet pointer and per-RID payloads that put a working GitHub CLI next to a .NET 
 ## Language
 
 **Pointer**:
-The `GitHub.Cli` nupkg: `Cli` plus `runtime.json` mapping each supported RID to a RID package.
+The `gh.cli` nupkg: `Cli` plus `runtime.json` mapping each supported RID to a RID package.
 _Avoid_: metapackage, tool package, native package
 
 **RID package**:
-`GitHub.Cli.{rid}` — one nupkg, one RID, one Payload.
+`gh.cli.{rid}` — one nupkg, one RID, one Payload.
 _Avoid_: native package, runtime pack, sidecar package
 
 **Payload**:

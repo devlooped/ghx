@@ -31,6 +31,7 @@ public class CliTests
         {
             var ex = Assert.Throws<FileNotFoundException>(() => GitHub.Cli.ResolvePath(root));
             Assert.Contains("gh", ex.FileName, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("gh.cli", ex.Message, StringComparison.Ordinal);
         }
         finally
         {

@@ -17,7 +17,7 @@ public static class Cli
         if (!File.Exists(path))
         {
             throw new FileNotFoundException(
-                $"GitHub CLI payload was not found at '{path}'. PackageReference GitHub.Cli and publish/pack for your RID.",
+                $"GitHub CLI payload was not found at '{path}'. PackageReference gh.cli and publish/pack for your RID.",
                 path);
         }
 

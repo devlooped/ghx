@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <PackageId>GitHub.Cli</PackageId>
+    <PackageId>gh.cli</PackageId>
     <RootNamespace>GitHub</RootNamespace>
     <AssemblyName>GitHub.Cli</AssemblyName>
-    <Description>GitHub CLI payload for .NET: PackageReference GitHub.Cli and publish/pack for your RID to get gh/ plus GitHub.Cli.ResolvePath.</Description>
+    <Description>GitHub CLI payload for .NET: PackageReference gh.cli and publish/pack for your RID to get gh/ plus GitHub.Cli.ResolvePath.</Description>
     <IsAotCompatible>true</IsAotCompatible>
     <IsPackable>true</IsPackable>
     <RuntimeIdentifiers>win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>

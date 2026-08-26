@@ -14,7 +14,7 @@
 
   <PropertyGroup Condition="'$(GitHubCliPayloadRoot)' == ''">
     <_GitHubCliVersion>$([System.IO.Path]::GetFileName($([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))))</_GitHubCliVersion>
-    <_GitHubCliPackageFolder>$([System.String]::Copy('github.cli.$(_GitHubCliRid)').ToLowerInvariant())</_GitHubCliPackageFolder>
+    <_GitHubCliPackageFolder>$([System.String]::Copy('gh.cli.$(_GitHubCliRid)').ToLowerInvariant())</_GitHubCliPackageFolder>
     <GitHubCliPayloadRoot>$(NuGetPackageRoot)$(_GitHubCliPackageFolder)\$(_GitHubCliVersion)\gh</GitHubCliPayloadRoot>
   </PropertyGroup>
 
@@ -23,7 +23,7 @@
           Condition="'$(GitHubCliPayloadRoot)' != ''">
     <Error
       Condition="'$(RuntimeIdentifier)' != '' and !Exists('$(GitHubCliPayloadRoot)')"
-      Text="GitHub.Cli payload not found at '$(GitHubCliPayloadRoot)'. Pack GitHub.Cli -r $(RuntimeIdentifier) first and restore from $(PackageOutputPath)." />
+      Text="gh.cli payload not found at '$(GitHubCliPayloadRoot)'. Pack gh.cli -r $(RuntimeIdentifier) first and restore from $(PackageOutputPath)." />
     <ItemGroup Condition="Exists('$(GitHubCliPayloadRoot)')">
       <_GitHubCliPayloadFiles Include="$(GitHubCliPayloadRoot)\**\*" />
       <ContentWithTargetPath Include="@(_GitHubCliPayloadFiles)">
