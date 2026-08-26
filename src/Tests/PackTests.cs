@@ -32,6 +32,8 @@ public class PackTests
         Assert.DoesNotContain("<PackAsTool", githubCli);
         Assert.Contains("GitHub.Cli.pack.targets", githubCli);
         Assert.Contains("buildTransitive\\GitHub.Cli.targets", githubCli.Replace('/', '\\'));
+        Assert.Contains("PackagePath=\"buildTransitive\\gh.cli.targets\"", githubCli.Replace('/', '\\'));
+        Assert.Contains("PackagePath=\"build\\gh.cli.targets\"", githubCli.Replace('/', '\\'));
         Assert.Contains("Readme", githubCli);
         Assert.DoesNotContain("win-arm64", githubCli);
 
@@ -72,6 +74,8 @@ public class PackTests
         Assert.Contains("IncludeGitHubCliPayload", consumer);
         Assert.Contains("gh.cli.$(_GitHubCliRid)", consumer);
         Assert.DoesNotContain("github.cli.", consumer);
+        var buildWrapper = File.ReadAllText(Path.Combine(repo, "src", "GitHub.Cli", "build", "GitHub.Cli.targets"));
+        Assert.Contains("$(MSBuildThisFileName).targets", buildWrapper);
         Assert.Contains(@"TargetPath>gh\", consumer.Replace('/', '\\'));
         Assert.DoesNotContain("runtimes/$(RuntimeIdentifier)/native/", consumer);
 
@@ -174,7 +178,8 @@ public class PackTests
             var names = ZipNames(pointer);
             Assert.Contains(names, n => n == "runtime.json" || n == "runtime.json/");
             Assert.Contains(names, n => n.Replace('\\', '/').StartsWith("lib/", StringComparison.Ordinal));
-            Assert.Contains(names, n => n.Replace('\\', '/').Contains("buildTransitive/GitHub.Cli.targets", StringComparison.Ordinal));
+            Assert.Contains(names, n => n.Replace('\\', '/').Contains("buildTransitive/gh.cli.targets", StringComparison.Ordinal));
+            Assert.Contains(names, n => n.Replace('\\', '/').Contains("build/gh.cli.targets", StringComparison.Ordinal));
             Assert.DoesNotContain(names, n => n.Replace('\\', '/').StartsWith("gh/", StringComparison.Ordinal));
         }
 
