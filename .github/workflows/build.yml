@@ -45,13 +45,13 @@ jobs:
       - name: ⚙ dotnet
         uses: devlooped/actions-dotnet-env@v1
 
-      - name: 📦 GitHub.Cli
+      - name: 📦 gh.cli
         run: |
           $ErrorActionPreference = 'Stop'
           dotnet pack src/GitHub.Cli/GitHub.Cli.csproj -c $env:Configuration -p:GeneratePackageOnBuild=false -bl:pointer-pack.binlog
-          if ($LASTEXITCODE -ne 0) { throw "GitHub.Cli pointer pack failed with exit code $LASTEXITCODE." }
+          if ($LASTEXITCODE -ne 0) { throw "gh.cli pointer pack failed with exit code $LASTEXITCODE." }
           dotnet pack src/GitHub.Cli/GitHub.Cli.csproj -c $env:Configuration -r linux-x64 -p:GeneratePackageOnBuild=false -bl:pack-linux-x64.binlog
-          if ($LASTEXITCODE -ne 0) { throw "GitHub.Cli linux-x64 pack failed with exit code $LASTEXITCODE." }
+          if ($LASTEXITCODE -ne 0) { throw "gh.cli linux-x64 pack failed with exit code $LASTEXITCODE." }
 
       - name: 🙏 build
         run: dotnet build -m:1 -bl:build.binlog
@@ -71,9 +71,9 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $script = Join-Path $pwd 'src/GitHub.Cli/unix-exec.ps1'
-          $cli = Get-ChildItem bin -Filter "GitHub.Cli.linux-x64.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
+          $cli = Get-ChildItem bin -Filter "gh.cli.linux-x64.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
           $tool = Get-ChildItem bin -Filter "gh.linux-x64.*.nupkg" | Where-Object Name -notlike '*.symbols.*' | Select-Object -First 1
-          if (-not $cli) { throw "GitHub.Cli.linux-x64 nupkg not found" }
+          if (-not $cli) { throw "gh.cli.linux-x64 nupkg not found" }
           if (-not $tool) { throw "gh.linux-x64 nupkg not found" }
           foreach ($pkg in @($cli, $tool)) {
             & pwsh -NoProfile -File $script -Nupkg $pkg.FullName -Assert

@@ -23,8 +23,9 @@ public class PackTests
         Assert.Contains("src/gh/gh.csproj", slnx);
 
         var githubCli = File.ReadAllText(Path.Combine(repo, "src", "GitHub.Cli", "GitHub.Cli.csproj"));
-        Assert.Contains("<PackageId>GitHub.Cli</PackageId>", githubCli);
+        Assert.Contains("<PackageId>gh.cli</PackageId>", githubCli);
         Assert.Contains("<RootNamespace>GitHub</RootNamespace>", githubCli);
+        Assert.Contains("PackageReference gh.cli", githubCli);
         Assert.Contains("GitHub.Cli.ResolvePath", githubCli);
         Assert.Contains("<RuntimeIdentifiers>win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>", githubCli);
         Assert.DoesNotContain("NuGetizer", githubCli, StringComparison.OrdinalIgnoreCase);
@@ -69,6 +70,8 @@ public class PackTests
 
         var consumer = File.ReadAllText(Path.Combine(repo, "src", "GitHub.Cli", "buildTransitive", "GitHub.Cli.targets"));
         Assert.Contains("IncludeGitHubCliPayload", consumer);
+        Assert.Contains("gh.cli.$(_GitHubCliRid)", consumer);
+        Assert.DoesNotContain("github.cli.", consumer);
         Assert.Contains(@"TargetPath>gh\", consumer.Replace('/', '\\'));
         Assert.DoesNotContain("runtimes/$(RuntimeIdentifier)/native/", consumer);
 
@@ -79,13 +82,14 @@ public class PackTests
         Assert.Contains("<ToolCommandName>dotnet-gh</ToolCommandName>", tool);
         Assert.Contains("<AssemblyName>dotnet-gh</AssemblyName>", tool);
         Assert.Contains("<ToolPackageRuntimeIdentifiers>win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</ToolPackageRuntimeIdentifiers>", tool);
-        Assert.Contains("""<PackageReference Include="GitHub.Cli" Version="$(Version)" />""", tool);
+        Assert.Contains("""<PackageReference Include="gh.cli" Version="$(Version)" />""", tool);
         Assert.DoesNotContain("NuGetizer", tool, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Readme", tool);
         var nuget = File.ReadAllText(Path.Combine(repo, "src", "gh", "nuget.config"));
         Assert.Contains("key=\"local\"", nuget);
         Assert.Contains("../../bin", nuget);
-        Assert.Contains("GitHub.Cli", nuget);
+        Assert.Contains("package pattern=\"gh.cli\"", nuget);
+        Assert.Contains("package pattern=\"gh.cli.*\"", nuget);
         Assert.Contains("package pattern=\"gh\"", nuget);
         Assert.DoesNotContain("win-arm64", tool);
         Assert.DoesNotContain("gh.$(RuntimeIdentifier)", tool);
@@ -139,8 +143,8 @@ public class PackTests
         {
             var range = runtimes
                 .GetProperty(rid)
-                .GetProperty("GitHub.Cli")
-                .GetProperty("GitHub.Cli." + rid)
+                .GetProperty("gh.cli")
+                .GetProperty("gh.cli." + rid)
                 .GetString();
             Assert.False(string.IsNullOrWhiteSpace(range));
             Assert.StartsWith("[", range);
@@ -157,7 +161,7 @@ public class PackTests
         if (!Directory.Exists(bin))
             return;
 
-        var nupkgs = Directory.GetFiles(bin, "GitHub.Cli*.nupkg")
+        var nupkgs = Directory.GetFiles(bin, "gh.cli*.nupkg")
             .Where(f => !f.Contains(".symbols.", StringComparison.OrdinalIgnoreCase))
             .ToArray();
         if (nupkgs.Length == 0)
@@ -188,9 +192,14 @@ public class PackTests
         }
 
         foreach (var toolRid in Directory.GetFiles(bin, "gh.*.nupkg")
-            .Where(f => !f.Contains(".symbols.", StringComparison.OrdinalIgnoreCase)
-                && SupportedRids.Any(r => Path.GetFileName(f).Contains("." + r + ".", StringComparison.Ordinal)
-                    && !Path.GetFileName(f).Contains(".win-", StringComparison.Ordinal))))
+            .Where(f =>
+            {
+                var name = Path.GetFileName(f);
+                return !name.Contains(".symbols.", StringComparison.OrdinalIgnoreCase)
+                    && !name.StartsWith("gh.cli.", StringComparison.OrdinalIgnoreCase)
+                    && SupportedRids.Any(r => name.Contains("." + r + ".", StringComparison.Ordinal)
+                        && !name.Contains(".win-", StringComparison.Ordinal));
+            }))
         {
             AssertUnixExecuteBits(toolRid);
         }

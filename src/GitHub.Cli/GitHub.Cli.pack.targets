@@ -40,7 +40,7 @@
     <ItemGroup>
       <_GitHubCliRid Include="$(RuntimeIdentifiers)" />
     </ItemGroup>
-    <Error Condition="'@(_GitHubCliRid)' == ''" Text="GitHub.Cli pointer pack requires RuntimeIdentifiers so runtime.json can map RID packages." />
+    <Error Condition="'@(_GitHubCliRid)' == ''" Text="gh.cli pointer pack requires RuntimeIdentifiers so runtime.json can map RID packages." />
     <Error Condition="'$(PkgJsonPoke)' == '' or !Exists('$(PkgJsonPoke)\build\JsonPoke.dll')" Text="JsonPoke was not restored; cannot write runtime.json." />
     <MakeDir Directories="$([System.IO.Path]::GetDirectoryName($(_GitHubCliRuntimeJson)))" />
     <WriteLinesToFile File="$(_GitHubCliRuntimeJson)" Lines="{&quot;runtimes&quot;:{}}" Overwrite="true" />
@@ -69,7 +69,7 @@
   </Target>
 
   <Target Name="PackGitHubCliPayload" DependsOnTargets="RestoreGitHubCliPayload" Condition="'$(RuntimeIdentifier)' != ''" Returns="@(TfmSpecificPackageFile)">
-    <Error Condition="!Exists('$(GitHubCliPayloadRoot)')" Text="GitHub.Cli RID pack requires a Payload at $(GitHubCliPayloadRoot)." />
+    <Error Condition="!Exists('$(GitHubCliPayloadRoot)')" Text="gh.cli RID pack requires a Payload at $(GitHubCliPayloadRoot)." />
     <ItemGroup>
       <TfmSpecificPackageFile Include="$(GitHubCliPayloadRoot)\**\*" Exclude="$(GitHubCliPayloadRoot)\.payload">
         <PackagePath>gh/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>

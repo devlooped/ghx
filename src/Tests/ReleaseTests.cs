@@ -56,7 +56,7 @@ public class ReleaseTests
         Assert.DoesNotContain("Expand-Archive", publish);
         Assert.DoesNotContain("tar -xf $nupkg", publish);
         Assert.Contains("package-pointer", publish);
-        Assert.Contains("bin/GitHub.Cli.${{ matrix.rid }}.*.nupkg", publish);
+        Assert.Contains("bin/gh.cli.${{ matrix.rid }}.*.nupkg", publish);
         Assert.DoesNotContain("python3-pip", publish);
         Assert.DoesNotContain("apt-get install -y python3-pip", publish);
     }

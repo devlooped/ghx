@@ -20,12 +20,12 @@
   <!--
     Pointer (`dotnet pack`): DotnetTool v2 settings listing gh.{rid}.
     ToolCommandName is dotnet-gh so an installed tool is `dotnet gh`, not `gh`.
-    RID (`dotnet pack -r`): AOT tool plus the GitHub.Cli Payload.
+    RID (`dotnet pack -r`): AOT tool plus the gh.cli Payload.
     Do not suffix PackageId here; the SDK appends $(RuntimeIdentifier) for DotnetToolRidPackage.
   -->
 
   <ItemGroup>
-    <PackageReference Include="GitHub.Cli" Version="$(Version)" />
+    <PackageReference Include="gh.cli" Version="$(Version)" />
     <PackageReference Include="Readme" Version="1.2.1" PrivateAssets="all" />
   </ItemGroup>
 </Project>

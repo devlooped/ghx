@@ -33,7 +33,7 @@ dotnet tool install gh && dotnet gh --version
 
 `dnx`/`ndnx` use the package id `gh`. An installed tool is `dotnet gh` (`ToolCommandName` `dotnet-gh`) so it does not replace GitHub's native `gh` on PATH.
 
-`PackageReference` `GitHub.Cli` and pack/publish for your RID to copy `gh/` next to the app. `GitHub.Cli.ResolvePath()` is the Payload `gh` executable.
+`PackageReference` `gh.cli` and pack/publish for your RID to copy `gh/` next to the app. `GitHub.Cli.ResolvePath()` is the Payload `gh` executable.
 
 <!-- #content -->
 ---
