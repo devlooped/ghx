@@ -21,7 +21,7 @@ The managed type in namespace `GitHub` whose `ResolvePath` returns the Payload's
 _Avoid_: Gh, Ghx, GitHubCli, ResolveBinaryPath
 
 **gh** (tool package):
-The passthrough .NET tool. Package id `gh` so `dnx`/`ndnx gh`. `ToolCommandName` is `dotnet-gh`, so a locally/globally installed tool is `dotnet gh` and does not steal the `gh` command from GitHub's native CLI.
+The passthrough .NET tool. Package id `gh` so `dnx`/`ndx gh`. `ToolCommandName` is `dotnet-gh`, so a locally/globally installed tool is `dotnet gh` and does not steal the `gh` command from GitHub's native CLI.
 _Avoid_: installing a command named `gh`; wrapping with its own GitHub verbs
 
 **Execute**:

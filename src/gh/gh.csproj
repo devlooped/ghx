@@ -5,7 +5,7 @@
     <PackageId>gh</PackageId>
     <RootNamespace>gh</RootNamespace>
     <AssemblyName>dotnet-gh</AssemblyName>
-    <Description>Execute the bundled GitHub CLI. ndnx gh / dnx gh / dotnet gh.</Description>
+    <Description>Execute the bundled GitHub CLI. ndx gh / dnx gh / dotnet gh.</Description>
     <PackAsTool>true</PackAsTool>
     <PublishAot>true</PublishAot>
     <ToolCommandName>dotnet-gh</ToolCommandName>
