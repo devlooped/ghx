@@ -19,19 +19,19 @@ OSMF tier. A single fee covers all of [Devlooped packages](https://www.nuget.org
 
 <!-- https://github.com/devlooped/.github/raw/main/osmf.md -->
 <!-- #content -->
-Packs the [GitHub CLI](https://github.com/cli/cli) for install-less, portable execution via `ndnx`/`dnx`.
+Packs the [GitHub CLI](https://github.com/cli/cli) for install-less, portable execution via `ndx`/`dnx`.
 
 ## Usage
 
 ```bash
-ndnx gh repo list
+ndx gh repo list
 dnx  gh repo list
 
 # installed
 dotnet tool install gh && dotnet gh --version
 ```
 
-`dnx`/`ndnx` use the package id `gh`. An installed tool is `dotnet gh` (`ToolCommandName` `dotnet-gh`) so it does not replace GitHub's native `gh` on PATH.
+`dnx`/`ndx` use the package id `gh`. An installed tool is `dotnet gh` (`ToolCommandName` `dotnet-gh`) so it does not replace GitHub's native `gh` on PATH.
 
 `PackageReference` `gh.cli` and pack/publish for your RID to copy `gh/` next to the app. `GitHub.Cli.ResolvePath()` is the Payload `gh` executable.
 
