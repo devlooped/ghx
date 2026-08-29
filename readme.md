@@ -1,4 +1,4 @@
-![Icon](assets/icon.png) ghx
+![Icon](assets/icon.png) gh executor
 ============
 
 [![Version](https://img.shields.io/nuget/vpre/gh.svg?color=royalblue)](https://www.nuget.org/packages/gh)
