@@ -25,7 +25,7 @@ Packs the [GitHub CLI](https://github.com/cli/cli) for install-less, portable ex
 
 ```bash
 ndx gh repo list
-dnx  gh repo list
+dnx gh repo list
 
 # installed
 dotnet tool install gh && dotnet gh --version
