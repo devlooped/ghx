@@ -26,6 +26,6 @@
 
   <ItemGroup>
     <PackageReference Include="gh.cli" Version="$(Version)" />
-    <PackageReference Include="Readme" Version="1.2.1" PrivateAssets="all" />
+    <PackageReference Include="Readme" Version="1.2.2" PrivateAssets="all" />
   </ItemGroup>
 </Project>
